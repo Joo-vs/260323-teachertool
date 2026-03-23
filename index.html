@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>저작툴 개선안 v2</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+:root {
+  --bg:#F2F3F6;
+  --surface:#FFFFFF;
+  --surface2:#F7F8FA;
+  --border:#E2E4E9;
+  --border-light:#ECEEF2;
+  --text-primary:#1A1D23;
+  --text-secondary:#5C6070;
+  --text-tertiary:#9DA3B2;
+  --accent:#4361EE;
+  --accent-light:#EEF1FD;
+  --accent-mid:#C5CFFB;
+  --success:#22C55E;
+  --danger:#EF4444;
+  --sidebar-w:200px;
+  --right-w:196px;
+}
+
+body {
+  font-family:'Noto Sans KR',sans-serif;
+  background:var(--bg);
+  color:var(--text-primary);
+  font-size:13px;
+  height:100vh;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+
+/* ── TOP BAR ─────────────────────────────────── */
+.top-bar {
+  height:46px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;flex-shrink:0;z-index:100;
+}
+.top-left{display:flex;align-items:center;gap:8px;}
+.breadcrumb{font-size:11px;color:var(--text-tertiary);display:flex;align-items:center;gap:4px;}
+.doc-title{font-size:13px;font-weight:500;padding:3px 7px;border-radius:5px;border:1px solid transparent;cursor:text;}
+.doc-title:hover{border-color:var(--border);background:var(--surface2);}
+.top-right{display:flex;align-items:center;gap:6px;}
+
+.btn{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-family:'Noto Sans KR',sans-serif;font-weight:500;padding:5px 11px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text-secondary);cursor:pointer;transition:all .15s;}
+.btn:hover{background:var(--surface2);border-color:#c8cbd5;color:var(--text-primary);}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.btn-primary:hover{background:#3451d1;border-color:#3451d1;color:#fff;}
+.btn-icon{width:28px;height:28px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;font-size:13px;}
+
+/* ── TOOLBAR WRAP (fixed + context stacked) ─── */
+.toolbar-area{flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);z-index:90;}
+
+/* Fixed toolbar row */
+.toolbar-fixed{
+  height:42px;display:flex;align-items:center;padding:0 14px;gap:1px;
+}
+.tb-sep{width:1px;height:18px;background:var(--border);margin:0 6px;flex-shrink:0;}
+.tb-btn{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:11.5px;font-family:'Noto Sans KR',sans-serif;
+  padding:5px 8px;border-radius:5px;border:1px solid transparent;
+  background:transparent;color:var(--text-secondary);cursor:pointer;transition:all .12s;white-space:nowrap;
+}
+.tb-btn:hover{background:var(--surface2);border-color:var(--border-light);color:var(--text-primary);}
+.tb-btn.tb-active{background:var(--accent-light);border-color:var(--accent-mid);color:var(--accent);}
+.tb-icon{font-size:13px;line-height:1;}
+.tb-lbl{font-size:11px;}
+
+/* Context toolbar row — slides in below fixed */
+.toolbar-ctx{
+  height:0;overflow:hidden;
+  display:flex;align-items:center;padding:0 14px;gap:1px;
+  background:#F0F3FF;border-top:1px solid var(--accent-mid);
+  transition:height .18s ease;
+}
+.toolbar-ctx.visible{height:42px;overflow:visible;}
+.ctx-tag{
+  font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;
+  background:var(--accent);color:#fff;margin-right:4px;flex-shrink:0;white-space:nowrap;
+}
+.ctx-sep{width:1px;height:16px;background:var(--accent-mid);margin:0 5px;}
+.ctx-btn{
+  display:inline-flex;align-items:center;gap:3px;
+  font-size:11px;font-family:'Noto Sans KR',sans-serif;
+  padding:4px 7px;border-radius:4px;border:1px solid transparent;
+  background:transparent;color:#4361EE;cursor:pointer;transition:all .12s;white-space:nowrap;
+}
+.ctx-btn:hover{background:var(--accent-mid);border-color:var(--accent-mid);}
+.ctx-btn.danger{color:var(--danger);}
+.ctx-btn.danger:hover{background:#FEE2E2;border-color:#FECACA;}
+
+/* ── MAIN ────────────────────────────────────── */
+.main{display:flex;flex:1;overflow:hidden;}
+
+/* ── SIDEBAR ─────────────────────────────────── */
+.sidebar{
+  width:var(--sidebar-w);background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;
+}
+.sidebar-hd{
+  padding:11px 12px 9px;border-bottom:1px solid var(--border-light);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.sidebar-title{font-size:10px;font-weight:600;color:var(--text-tertiary);letter-spacing:.05em;text-transform:uppercase;}
+.sidebar-body{flex:1;overflow-y:auto;padding:8px 7px;}
+.sidebar-body::-webkit-scrollbar{width:3px;}
+.sidebar-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+.q-nav{display:flex;align-items:center;gap:7px;padding:6px 7px;border-radius:6px;margin-bottom:2px;cursor:pointer;transition:all .12s;}
+.q-nav:hover{background:var(--surface2);}
+.q-nav.active{background:var(--accent-light);}
+.q-nav-num{width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:4px;font-size:10px;font-weight:600;flex-shrink:0;}
+.q-nav-num.on{background:var(--accent);color:#fff;}
+.q-nav-num.off{background:var(--surface2);color:var(--text-tertiary);border:1px solid var(--border-light);}
+.q-nav-txt{font-size:11px;color:var(--text-secondary);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.q-nav.active .q-nav-txt{color:var(--accent);font-weight:500;}
+.q-nav-type{font-size:9px;font-weight:500;padding:1px 5px;border-radius:3px;background:var(--border-light);color:var(--text-tertiary);flex-shrink:0;}
+.q-nav.active .q-nav-type{background:var(--accent-mid);color:var(--accent);}
+.sidebar-foot{padding:8px 7px;border-top:1px solid var(--border-light);}
+.add-btn{width:100%;padding:7px;border-radius:6px;border:1px dashed var(--border);background:transparent;font-size:11.5px;font-family:'Noto Sans KR',sans-serif;color:var(--text-tertiary);cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:4px;}
+.add-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light);}
+
+/* ── CANVAS ──────────────────────────────────── */
+.canvas{flex:1;overflow-y:auto;padding:24px 36px;background:var(--bg);}
+.canvas::-webkit-scrollbar{width:4px;}
+.canvas::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* variant toggle strip */
+.variant-strip{
+  display:flex;align-items:center;gap:8px;margin-bottom:16px;
+  padding:8px 12px;background:var(--surface);border-radius:8px;border:1px solid var(--border);
+}
+.variant-strip-label{font-size:11px;color:var(--text-tertiary);font-weight:500;margin-right:4px;}
+.vbtn{
+  font-size:11px;font-family:'Noto Sans KR',sans-serif;font-weight:500;
+  padding:4px 12px;border-radius:20px;border:1px solid var(--border);
+  background:transparent;color:var(--text-secondary);cursor:pointer;transition:all .15s;
+}
+.vbtn.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+.vbtn:hover:not(.on){background:var(--surface2);}
+.variant-desc{font-size:11px;color:var(--text-tertiary);margin-left:auto;}
+
+/* ── Q-CARD base ─────────────────────────────── */
+.q-card{
+  background:var(--surface);border-radius:10px;
+  margin-bottom:12px;position:relative;
+  transition:all .2s;
+  border:1px solid var(--border-light);
+}
+.q-card-inner{padding:18px 20px;}
+
+/* ── VARIANT A: Blue border + "편집 중" badge ── */
+body.var-a .q-card.inactive{
+  opacity:.52;filter:grayscale(25%);
+}
+body.var-a .q-card.active{
+  border:1.5px solid var(--accent);
+  box-shadow:0 0 0 3px rgba(67,97,238,.07),0 2px 12px rgba(67,97,238,.07);
+  opacity:1;filter:none;
+}
+
+/* ── VARIANT B: Left accent bar, soft bg tint ── */
+body.var-b .q-card.inactive{
+  opacity:.5;filter:grayscale(25%);
+  border-left:3px solid transparent;
+}
+body.var-b .q-card.active{
+  border:1px solid var(--border-light);
+  border-left:3px solid var(--accent);
+  background:#FAFBFF;
+  opacity:1;filter:none;
+  box-shadow:0 2px 10px rgba(0,0,0,.04);
+}
+
+/* Common: active num badge */
+.q-num-badge{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;margin-top:1px;}
+.q-num-badge.off{background:var(--surface2);color:var(--text-tertiary);border:1px solid var(--border-light);}
+.q-num-badge.on{background:var(--accent);color:#fff;}
+
+/* Active badge — variant A only */
+.active-badge{
+  font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;
+  background:var(--accent-light);color:var(--accent);border:1px solid var(--accent-mid);
+  flex-shrink:0;margin-top:3px;
+  display:none;
+}
+body.var-a .q-card.active .active-badge{display:block;}
+
+.q-header{display:flex;align-items:flex-start;gap:9px;margin-bottom:13px;}
+.q-stem{flex:1;font-size:13px;font-weight:500;color:var(--text-primary);line-height:1.6;padding:2px 0;}
+.q-stem-ph{color:var(--text-tertiary);font-weight:400;}
+
+/* choices */
+.choices{display:flex;flex-direction:column;gap:6px;margin-left:33px;}
+.choice-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;border:1px solid var(--border-light);background:var(--surface2);transition:border-color .15s;}
+.active .choice-item:hover{border-color:var(--accent-mid);background:var(--accent-light);}
+.choice-num{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;border:1.5px solid var(--border);color:var(--text-tertiary);flex-shrink:0;}
+.choice-txt{font-size:12px;color:var(--text-tertiary);}
+.active .choice-txt{color:var(--text-secondary);}
+
+/* short answer */
+.short-ans-wrap{margin-left:33px;margin-top:2px;}
+.short-ans-box{width:180px;height:32px;border-radius:5px;border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;padding:0 9px;font-size:12px;color:var(--text-tertiary);}
+.active .short-ans-box{border-color:var(--accent-mid);}
+.ans-cursor{width:2px;height:12px;background:var(--accent);display:inline-block;margin-left:2px;animation:blink 1s step-end infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* footer */
+.q-footer{border-top:1px solid var(--border-light);margin:13px -20px -18px;padding:10px 20px;display:flex;flex-direction:column;gap:7px;background:var(--surface2);border-radius:0 0 10px 10px;}
+.hint-row{display:flex;align-items:flex-start;gap:7px;}
+.hint-tag{font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;flex-shrink:0;margin-top:1px;}
+.hint-tag.h{background:#FEF3C7;color:#92400E;}
+.hint-tag.e{background:#D1FAE5;color:#065F46;}
+.hint-ph{font-size:11.5px;color:var(--text-tertiary);line-height:1.5;}
+
+/* image area */
+.img-insert-area{margin-left:33px;margin-bottom:11px;}
+.img-upload-zone{
+  width:100%;height:120px;border-radius:7px;
+  border:1.5px dashed var(--border);
+  background:var(--surface2);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:5px;
+  cursor:pointer;transition:all .15s;
+}
+.img-upload-zone:hover{border-color:var(--accent);background:var(--accent-light);}
+.img-preview{
+  width:100%;border-radius:7px;overflow:hidden;position:relative;cursor:pointer;
+  border:1.5px solid var(--border-light);
+}
+.img-preview img{width:100%;display:block;max-height:160px;object-fit:cover;}
+.img-preview-overlay{
+  position:absolute;inset:0;background:rgba(67,97,238,.12);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .15s;
+}
+.img-preview:hover .img-preview-overlay{opacity:1;}
+.img-selected-ring{outline:2px solid var(--accent);outline-offset:2px;}
+
+/* card side actions */
+.q-card-actions{position:absolute;right:-40px;top:10px;display:flex;flex-direction:column;gap:3px;opacity:0;transition:opacity .15s;pointer-events:none;}
+.q-card.active .q-card-actions{opacity:1;pointer-events:all;}
+.ca-btn{width:30px;height:30px;border-radius:6px;border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:var(--text-secondary);transition:all .12s;}
+.ca-btn:hover{background:var(--surface2);}
+
+/* ── RIGHT PANEL ─────────────────────────────── */
+.right-panel{
+  width:var(--right-w);background:var(--surface);
+  border-left:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;
+}
+.rp-sec{border-bottom:1px solid var(--border-light);}
+.rp-hd{padding:10px 13px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;}
+.rp-title{font-size:11px;font-weight:600;color:var(--text-secondary);}
+.rp-arrow{font-size:10px;color:var(--text-tertiary);}
+.rp-body{padding:2px 13px 12px;}
+.rp-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;}
+.rp-lbl{font-size:11px;color:var(--text-tertiary);}
+.rp-val{font-size:11px;font-weight:500;color:var(--text-secondary);}
+.toggle{width:28px;height:15px;border-radius:8px;background:var(--accent);position:relative;cursor:pointer;}
+.toggle::after{content:'';position:absolute;width:11px;height:11px;border-radius:50%;background:#fff;top:2px;right:2px;transition:right .15s;}
+.toggle.off{background:var(--border);}
+.toggle.off::after{right:15px;}
+
+/* ── STATUS BAR ──────────────────────────────── */
+.status-bar{height:26px;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:14px;flex-shrink:0;}
+.st-item{font-size:10.5px;color:var(--text-tertiary);display:flex;align-items:center;gap:4px;}
+.st-dot{width:5px;height:5px;border-radius:50%;background:var(--success);}
+
+/* ── MEDIA AREAS (공통) ──────────────────────── */
+.media-area { margin-left:33px; margin-bottom:11px; }
+.upload-zone {
+  width:100%; height:110px; border-radius:7px;
+  border:1.5px dashed var(--border);
+  background:var(--surface2);
+  display:flex; align-items:center; justify-content:center; flex-direction:column; gap:5px;
+  cursor:pointer; transition:all .15s;
+}
+.upload-zone:hover { border-color:var(--accent); background:var(--accent-light); }
+.zone-label { font-size:12px; color:var(--accent); font-weight:500; }
+.zone-sub   { font-size:10px; color:var(--text-tertiary); }
+.media-preview {
+  width:100%; border-radius:7px; overflow:hidden;
+  position:relative; cursor:pointer;
+  border:1.5px solid var(--border-light);
+}
+.media-preview .preview-overlay {
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  background:rgba(67,97,238,.12);
+  font-size:11px; font-weight:600; color:#fff;
+  opacity:0; transition:opacity .15s;
+}
+.media-preview:hover .preview-overlay { opacity:1; }
+.selected-ring { outline:2px solid var(--accent); outline-offset:2px; }
+
+/* ── CANVAS ADD BTN ──────────────────────────── */
+.canvas-add-btn{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  width:100%;margin-top:12px;
+  padding:11px;border-radius:8px;
+  border:1.5px dashed var(--border);
+  background:transparent;
+  font-size:12.5px;font-family:'Noto Sans KR',sans-serif;font-weight:500;
+  color:var(--text-tertiary);cursor:pointer;transition:all .15s;
+}
+.canvas-add-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light);}
+
+/* ── TOAST ───────────────────────────────────── */
+.toast{position:fixed;bottom:36px;left:50%;transform:translateX(-50%);background:var(--text-primary);color:#fff;font-size:11.5px;padding:7px 14px;border-radius:7px;pointer-events:none;opacity:0;transition:opacity .2s;z-index:9999;white-space:nowrap;}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body class="var-a">
+
+<!-- ── TOP BAR ──────────────────────────────── -->
+<div class="top-bar">
+  <div class="top-left">
+    <span class="breadcrumb">
+      <span>내 콘텐츠</span>
+      <span style="color:var(--border)">›</span>
+      <span>[문항] 2. 단답형</span>
+    </span>
+    <span class="doc-title" contenteditable="true">정답미입력</span>
+  </div>
+  <div class="top-right">
+    <button class="btn btn-icon" title="실행취소" onclick="toast('실행 취소')">↩</button>
+    <button class="btn btn-icon" title="다시실행" onclick="toast('다시 실행')">↪</button>
+    <button class="btn" onclick="toast('미리보기 열림')">👁 미리보기</button>
+    <button class="btn btn-primary" onclick="toast('저장 완료!')">저장하기</button>
+    <button class="btn" onclick="toast('닫기')">닫기</button>
+  </div>
+</div>
+
+<!-- ── TOOLBAR AREA ──────────────────────────── -->
+<div class="toolbar-area">
+
+  <!-- Fixed row -->
+  <div class="toolbar-fixed">
+    <div style="display:flex;align-items:center;gap:1px;">
+      <button class="tb-btn" onclick="toast('선택 도구')">
+        <svg class="tb-icon" width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M3 1l9 6.5-5.5 1L8 13 6 14 4.5 9.5 1 11z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+        <span class="tb-lbl">선택</span>
+      </button>
+      <button class="tb-btn" onclick="toast('텍스트 도구')">
+        <svg class="tb-icon" width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M2 3h11M7.5 3v9M5 12h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <span class="tb-lbl">텍스트</span>
+      </button>
+    </div>
+    <div class="tb-sep"></div>
+    <div style="display:flex;align-items:center;gap:1px;">
+      <button class="tb-btn" id="btn-image" onclick="activateMediaTool('image')">
+        <svg class="tb-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2.5" width="13" height="11" rx="2" stroke="currentColor" stroke-width="1.3"/><circle cx="5.5" cy="6" r="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M1.5 11l3.5-3 3 3 2-2 4 4" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+        <span class="tb-lbl">이미지</span>
+      </button>
+      <button class="tb-btn" id="btn-video" onclick="activateMediaTool('video')">
+        <svg class="tb-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3" width="9" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 6l4-2v8l-4-2V6z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+        <span class="tb-lbl">동영상</span>
+      </button>
+      <button class="tb-btn" id="btn-audio" onclick="activateMediaTool('audio')">
+        <svg class="tb-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="5" y="1.5" width="6" height="8" rx="3" stroke="currentColor" stroke-width="1.3"/><path d="M3 8.5a5 5 0 0010 0" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="8" y1="13.5" x2="8" y2="15" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        <span class="tb-lbl">오디오</span>
+      </button>
+      <button class="tb-btn" id="btn-math" onclick="activateMediaTool('math')">
+        <svg class="tb-icon" width="16" height="16" viewBox="0 0 16 16"><text x="2" y="13" font-size="13" font-weight="600" fill="currentColor" font-family="serif">&#x2211;</text></svg>
+        <span class="tb-lbl">수식</span>
+      </button>
+      <button class="tb-btn" id="btn-table" onclick="activateMediaTool('table')">
+        <svg class="tb-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="13" height="13" rx="1.5" stroke="currentColor" stroke-width="1.3"/><line x1="1.5" y1="6" x2="14.5" y2="6" stroke="currentColor" stroke-width="1.1"/><line x1="1.5" y1="10.5" x2="14.5" y2="10.5" stroke="currentColor" stroke-width="1.1"/><line x1="6" y1="6" x2="6" y2="14.5" stroke="currentColor" stroke-width="1.1"/><line x1="10.5" y1="6" x2="10.5" y2="14.5" stroke="currentColor" stroke-width="1.1"/></svg>
+        <span class="tb-lbl">표</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 이미지 컨텍스트 툴바 -->
+  <div class="toolbar-ctx" id="ctx-image">
+    <span class="ctx-tag">이미지</span>
+    <button class="ctx-btn" title="선" onclick="toast('선')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><line x1="2" y1="14" x2="14" y2="2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+    <button class="ctx-btn" title="직각선" onclick="toast('직각선')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><polyline points="3,13 3,3 13,3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="ctx-btn" title="사각형" onclick="toast('사각형')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="2.5" y="2.5" width="11" height="11" stroke="currentColor" stroke-width="1.5"/></svg></button>
+    <button class="ctx-btn" title="원" onclick="toast('원')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
+    <button class="ctx-btn" title="펜" onclick="toast('펜')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M10.5 2.5l3 3L5 14H2v-3L10.5 2.5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></button>
+    <div class="ctx-sep"></div>
+    <input type="number" value="2" min="1" max="20" title="선 굵기" style="width:34px;height:22px;border:1px solid var(--border);border-radius:4px;font-size:11px;text-align:center;font-family:inherit;color:var(--text-primary);background:var(--surface);padding:0 2px;" onchange="toast('선 굵기: '+this.value+'px')">
+    <span style="font-size:11px;color:var(--text-secondary);">px</span>
+    <select title="선 색" style="height:22px;border:1px solid var(--border);border-radius:4px;font-size:11px;font-family:inherit;color:var(--text-secondary);background:var(--surface);padding:0 3px;cursor:pointer;" onchange="toast('선 색: '+this.value)"><option>없음</option><option>검정</option><option>흰색</option><option>파랑</option><option>빨강</option></select>
+    <select title="채우기" style="height:22px;border:1px solid var(--border);border-radius:4px;font-size:11px;font-family:inherit;color:var(--text-secondary);background:var(--surface);padding:0 3px;cursor:pointer;" onchange="toast('채우기: '+this.value)"><option>없음</option><option>흰색</option><option>검정</option><option>파랑</option></select>
+    <div class="ctx-sep"></div>
+    <button class="ctx-btn" title="왼쪽" onclick="toast('왼쪽 맞춤')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><line x1="1" y1="1" x2="1" y2="15" stroke="#4361EE" stroke-width="2" stroke-linecap="round"/><rect x="2" y="4" width="9" height="8" rx="1" fill="#4361EE" opacity=".2"/></svg></button>
+    <button class="ctx-btn" title="가운데" onclick="toast('가운데 맞춤')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><line x1="8" y1="1" x2="8" y2="15" stroke="#4361EE" stroke-width="2" stroke-linecap="round"/><rect x="3" y="4" width="10" height="8" rx="1" fill="#4361EE" opacity=".2"/></svg></button>
+    <button class="ctx-btn" title="오른쪽" onclick="toast('오른쪽 맞춤')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><line x1="15" y1="1" x2="15" y2="15" stroke="#4361EE" stroke-width="2" stroke-linecap="round"/><rect x="4" y="4" width="10" height="8" rx="1" fill="#4361EE" opacity=".2"/></svg></button>
+    <div class="ctx-sep"></div>
+    <button class="ctx-btn" title="위쪽" onclick="toast('위쪽 맞춤')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><line x1="1" y1="2" x2="15" y2="2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><rect x="5" y="3" width="6" height="9" rx="1" stroke="currentColor" stroke-width="1.2"/></svg></button>
+    <button class="ctx-btn" title="세로 가운데" onclick="toast('세로 가운데')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><line x1="1" y1="8" x2="15" y2="8" stroke="#4361EE" stroke-width="1.5" stroke-linecap="round"/><line x1="8" y1="3" x2="8" y2="6" stroke="#4361EE" stroke-width="1.2" stroke-linecap="round"/><line x1="6" y1="3" x2="10" y2="3" stroke="#4361EE" stroke-width="1.2" stroke-linecap="round"/><line x1="8" y1="10" x2="8" y2="13" stroke="#4361EE" stroke-width="1.2" stroke-linecap="round"/><line x1="6" y1="13" x2="10" y2="13" stroke="#4361EE" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+    <button class="ctx-btn" title="아래쪽" onclick="toast('아래쪽 맞춤')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><line x1="1" y1="14" x2="15" y2="14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><rect x="5" y="4" width="6" height="9" rx="1" stroke="currentColor" stroke-width="1.2"/></svg></button>
+    <div class="ctx-sep"></div>
+    <button class="ctx-btn danger" onclick="removeMedia('image')"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><polyline points="2,4 14,4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M5 4V2.5h6V4M6 7v5M10 7v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><rect x="3" y="4" width="10" height="10" rx="1" stroke="currentColor" stroke-width="1.3"/></svg> 삭제</button>
+  </div>
+
+  <!-- 동영상 컨텍스트 툴바 -->
+  <div class="toolbar-ctx" id="ctx-video">
+    <span class="ctx-tag" style="background:#E85D04;">동영상</span>
+    <button class="ctx-btn" onclick="toast('자동재생')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M6.5 5.5l5 2.5-5 2.5z" fill="currentColor"/></svg> 자동재생</button>
+    <button class="ctx-btn" onclick="toast('반복재생')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 0110.4-4H10M14 8a6 6 0 01-10.4 4H6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> 반복재생</button>
+    <button class="ctx-btn" onclick="toast('컨트롤바')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="4" width="13" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/><line x1="4" y1="10" x2="12" y2="10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="5" cy="7.5" r="1.2" fill="currentColor"/></svg> 컨트롤</button>
+    <div class="ctx-sep"></div>
+    <button class="ctx-btn" title="왼쪽" onclick="toast('왼쪽 맞춤')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><line x1="1" y1="1" x2="1" y2="15" stroke="#E85D04" stroke-width="2" stroke-linecap="round"/><rect x="2" y="4" width="9" height="8" rx="1" fill="#E85D04" opacity=".2"/></svg></button>
+    <button class="ctx-btn" title="가운데" onclick="toast('가운데 맞춤')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><line x1="8" y1="1" x2="8" y2="15" stroke="#E85D04" stroke-width="2" stroke-linecap="round"/><rect x="3" y="4" width="10" height="8" rx="1" fill="#E85D04" opacity=".2"/></svg></button>
+    <button class="ctx-btn" title="오른쪽" onclick="toast('오른쪽 맞춤')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><line x1="15" y1="1" x2="15" y2="15" stroke="#E85D04" stroke-width="2" stroke-linecap="round"/><rect x="4" y="4" width="10" height="8" rx="1" fill="#E85D04" opacity=".2"/></svg></button>
+    <div class="ctx-sep"></div>
+    <button class="ctx-btn danger" onclick="removeMedia('video')"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><polyline points="2,4 14,4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M5 4V2.5h6V4M6 7v5M10 7v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><rect x="3" y="4" width="10" height="10" rx="1" stroke="currentColor" stroke-width="1.3"/></svg> 삭제</button>
+  </div>
+
+  <!-- 오디오 컨텍스트 툴바 -->
+  <div class="toolbar-ctx" id="ctx-audio">
+    <span class="ctx-tag" style="background:#7B2FBE;">오디오</span>
+    <button class="ctx-btn" onclick="toast('자동재생')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M6.5 5.5l5 2.5-5 2.5z" fill="currentColor"/></svg> 자동재생</button>
+    <button class="ctx-btn" onclick="toast('반복재생')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 0110.4-4H10M14 8a6 6 0 01-10.4 4H6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> 반복재생</button>
+    <button class="ctx-btn" onclick="toast('파형 표시')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><polyline points="1,8 3,4 5,12 7,6 9,10 11,3 13,12 15,8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg> 파형</button>
+    <div class="ctx-sep"></div>
+    <button class="ctx-btn danger" onclick="removeMedia('audio')"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><polyline points="2,4 14,4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M5 4V2.5h6V4M6 7v5M10 7v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><rect x="3" y="4" width="10" height="10" rx="1" stroke="currentColor" stroke-width="1.3"/></svg> 삭제</button>
+  </div>
+
+  <!-- 수식 컨텍스트 툴바 -->
+  <div class="toolbar-ctx" id="ctx-math">
+    <span class="ctx-tag" style="background:#0B7285;">수식</span>
+    <button class="ctx-btn" onclick="toast('분수')"><svg width="15" height="15" viewBox="0 0 16 16"><text x="4" y="8" font-size="7" fill="currentColor" font-family="serif">a</text><line x1="2" y1="8.5" x2="14" y2="8.5" stroke="currentColor" stroke-width="1.2"/><text x="4" y="15" font-size="7" fill="currentColor" font-family="serif">b</text></svg> 분수</button>
+    <button class="ctx-btn" onclick="toast('제곱근')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><polyline points="1,9 4,13 7,3 15,3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg> 제곱근</button>
+    <button class="ctx-btn" onclick="toast('적분')"><svg width="15" height="15" viewBox="0 0 16 16"><text x="4" y="13" font-size="14" fill="currentColor" font-family="serif">&#x222B;</text></svg> 적분</button>
+    <button class="ctx-btn" onclick="toast('합계')"><svg width="15" height="15" viewBox="0 0 16 16"><text x="2" y="13" font-size="13" fill="currentColor" font-family="serif">&#x2211;</text></svg> 합계</button>
+    <div class="ctx-sep"></div>
+    <select style="height:22px;border:1px solid var(--border);border-radius:4px;font-size:11px;font-family:inherit;color:var(--text-secondary);background:var(--surface);padding:0 3px;" onchange="toast('크기: '+this.value)"><option>보통</option><option>크게</option><option>작게</option></select>
+    <div class="ctx-sep"></div>
+    <button class="ctx-btn danger" onclick="removeMedia('math')"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><polyline points="2,4 14,4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M5 4V2.5h6V4M6 7v5M10 7v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><rect x="3" y="4" width="10" height="10" rx="1" stroke="currentColor" stroke-width="1.3"/></svg> 삭제</button>
+  </div>
+
+  <!-- 표 컨텍스트 툴바 -->
+  <div class="toolbar-ctx" id="ctx-table">
+    <span class="ctx-tag" style="background:#2B6CB0;">표</span>
+    <button class="ctx-btn" onclick="toast('행 추가')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="13" height="9" rx="1" stroke="currentColor" stroke-width="1.2"/><line x1="1.5" y1="6" x2="14.5" y2="6" stroke="currentColor" stroke-width="1"/><line x1="8" y1="12" x2="8" y2="15" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="5" y1="13.5" x2="11" y2="13.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> 행 추가</button>
+    <button class="ctx-btn" onclick="toast('열 추가')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="9" height="13" rx="1" stroke="currentColor" stroke-width="1.2"/><line x1="6" y1="1.5" x2="6" y2="14.5" stroke="currentColor" stroke-width="1"/><line x1="12" y1="5" x2="15" y2="5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="13.5" y1="3.5" x2="13.5" y2="6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> 열 추가</button>
+    <button class="ctx-btn" onclick="toast('행 삭제')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="13" height="9" rx="1" stroke="currentColor" stroke-width="1.2"/><line x1="1.5" y1="6" x2="14.5" y2="6" stroke="currentColor" stroke-width="1"/><line x1="5" y1="13.5" x2="11" y2="13.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> 행 삭제</button>
+    <button class="ctx-btn" onclick="toast('열 삭제')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="9" height="13" rx="1" stroke="currentColor" stroke-width="1.2"/><line x1="6" y1="1.5" x2="6" y2="14.5" stroke="currentColor" stroke-width="1"/><line x1="12" y1="7" x2="15" y2="7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> 열 삭제</button>
+    <div class="ctx-sep"></div>
+    <button class="ctx-btn" onclick="toast('셀 병합')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="13" height="13" rx="1" stroke="currentColor" stroke-width="1.2"/><line x1="8" y1="1.5" x2="8" y2="14.5" stroke="currentColor" stroke-width="1" stroke-dasharray="2 1.5"/><line x1="1.5" y1="8" x2="14.5" y2="8" stroke="currentColor" stroke-width="1" stroke-dasharray="2 1.5"/></svg> 셀 병합</button>
+    <button class="ctx-btn" onclick="toast('헤더 설정')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="13" height="13" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="1.5" y="1.5" width="13" height="4.5" rx="1" fill="currentColor" opacity=".2"/><line x1="1.5" y1="6" x2="14.5" y2="6" stroke="currentColor" stroke-width="1"/></svg> 헤더</button>
+    <div class="ctx-sep"></div>
+    <button class="ctx-btn danger" onclick="removeMedia('table')"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><polyline points="2,4 14,4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M5 4V2.5h6V4M6 7v5M10 7v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><rect x="3" y="4" width="10" height="10" rx="1" stroke="currentColor" stroke-width="1.3"/></svg> 삭제</button>
+  </div>
+
+</div>
+
+<!-- ── MAIN ──────────────────────────────────── -->
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-hd">
+      <span class="sidebar-title">문항 목록</span>
+      <span style="font-size:10px;color:var(--text-tertiary);">3문항</span>
+    </div>
+    <div class="sidebar-body" id="sidebarBody">
+      <div class="q-nav active" onclick="selectCard(0)">
+        <div class="q-nav-num on">1</div>
+        <div class="q-nav-txt">발문을 입력합니다.</div>
+        <div class="q-nav-type">5지선</div>
+      </div>
+      <div class="q-nav" onclick="selectCard(1)">
+        <div class="q-nav-num off">2</div>
+        <div class="q-nav-txt">발문을 입력합니다.</div>
+        <div class="q-nav-type">단답형</div>
+      </div>
+      <div class="q-nav" onclick="selectCard(2)">
+        <div class="q-nav-num off">3</div>
+        <div class="q-nav-txt">발문을 입력합니다.</div>
+        <div class="q-nav-type">OX형</div>
+      </div>
+    </div>
+    <div class="sidebar-foot" style="display:none;"></div>
+  </div>
+
+  <!-- CANVAS -->
+  <div class="canvas" id="canvas" onclick="handleCanvasClick(event)">
+
+    <!-- Variant switcher -->
+    <div class="variant-strip">
+      <span class="variant-strip-label">활성 문항 표시 방식</span>
+      <button class="vbtn on" id="vbtnA" onclick="switchVariant('a')">안 ①  테두리 + 편집 중</button>
+      <button class="vbtn" id="vbtnB" onclick="switchVariant('b')">안 ②  왼쪽 강조 바</button>
+      <span class="variant-desc" id="variantDesc">파란 테두리 · 번호 강조 · 배지</span>
+    </div>
+
+    <!-- CARD 0: 5지선다 (starts active) -->
+    <div class="q-card active" id="card0" onclick="selectCard(0)">
+      <div class="q-card-inner">
+        <div class="q-header">
+          <div class="q-num-badge on">1</div>
+          <div class="q-stem"><span class="q-stem-ph">발문을 입력합니다.</span></div>
+          <div class="active-badge">편집 중</div>
+        </div>
+
+        <!-- 미디어 삽입 영역들 (공통 구조: 업로드존 → 미리보기) -->
+
+        <!-- 이미지 -->
+        <div class="media-area" id="mediaArea-image" style="display:none;">
+          <div class="upload-zone" id="zone-image" data-type="image" onclick="pickFile('image')">
+            <svg width="26" height="26" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2.5" width="13" height="11" rx="2" stroke="var(--accent)" stroke-width="1.3"/><circle cx="5.5" cy="6" r="1.5" stroke="var(--accent)" stroke-width="1.2"/><path d="M1.5 11l3.5-3 3 3 2-2 4 4" stroke="var(--accent)" stroke-width="1.2" stroke-linejoin="round"/></svg>
+            <span class="zone-label">클릭하여 이미지 선택</span>
+            <span class="zone-sub">PNG · JPG · GIF</span>
+          </div>
+          <div class="media-preview selected-ring" id="preview-image" style="display:none;" onclick="selectMediaPreview(event,'image')">
+            <img id="el-image" src="" alt="" style="width:100%;display:block;max-height:180px;object-fit:cover;border-radius:6px;">
+            <div class="preview-overlay">클릭하여 편집</div>
+          </div>
+          <input type="file" id="fi-image" accept="image/*" style="display:none;" onchange="handleFile(event,'image')">
+        </div>
+
+        <!-- 동영상 -->
+        <div class="media-area" id="mediaArea-video" style="display:none;">
+          <div class="upload-zone" id="zone-video" style="--zc:#E85D04;--zb:#FFF7F0;" onclick="pickFile('video')">
+            <svg width="26" height="26" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3" width="9" height="10" rx="1.5" stroke="#E85D04" stroke-width="1.3"/><path d="M10.5 6l4-2v8l-4-2V6z" stroke="#E85D04" stroke-width="1.3" stroke-linejoin="round"/></svg>
+            <span class="zone-label" style="color:#E85D04;">클릭하여 동영상 선택</span>
+            <span class="zone-sub">MP4 · MOV · AVI</span>
+          </div>
+          <div class="media-preview" id="preview-video" style="display:none;" onclick="selectMediaPreview(event,'video')">
+            <video id="el-video" controls style="width:100%;border-radius:6px;max-height:180px;background:#000;"></video>
+            <div class="preview-overlay" style="background:rgba(232,93,4,.6);">클릭하여 편집</div>
+          </div>
+          <input type="file" id="fi-video" accept="video/*" style="display:none;" onchange="handleFile(event,'video')">
+        </div>
+
+        <!-- 오디오 -->
+        <div class="media-area" id="mediaArea-audio" style="display:none;">
+          <div class="upload-zone" id="zone-audio" style="--zc:#7B2FBE;--zb:#F8F0FF;" onclick="pickFile('audio')">
+            <svg width="26" height="26" viewBox="0 0 16 16" fill="none"><rect x="5" y="1.5" width="6" height="8" rx="3" stroke="#7B2FBE" stroke-width="1.3"/><path d="M3 8.5a5 5 0 0010 0" stroke="#7B2FBE" stroke-width="1.3" stroke-linecap="round"/><line x1="8" y1="13.5" x2="8" y2="15" stroke="#7B2FBE" stroke-width="1.3" stroke-linecap="round"/></svg>
+            <span class="zone-label" style="color:#7B2FBE;">클릭하여 오디오 선택</span>
+            <span class="zone-sub">MP3 · WAV · OGG</span>
+          </div>
+          <div class="media-preview" id="preview-audio" style="display:none;" onclick="selectMediaPreview(event,'audio')">
+            <div style="background:#F8F0FF;border-radius:6px;padding:12px 16px;">
+              <audio id="el-audio" controls style="width:100%;"></audio>
+              <div style="margin-top:8px;display:flex;align-items:center;gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><polyline points="1,8 3,4 5,12 7,6 9,10 11,3 13,12 15,8" stroke="#7B2FBE" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                <span id="audio-filename" style="font-size:11px;color:#7B2FBE;"></span>
+              </div>
+            </div>
+            <div class="preview-overlay" style="background:rgba(123,47,190,.5);">클릭하여 편집</div>
+          </div>
+          <input type="file" id="fi-audio" accept="audio/*" style="display:none;" onchange="handleFile(event,'audio')">
+        </div>
+
+        <!-- 수식 -->
+        <div class="media-area" id="mediaArea-math" style="display:none;">
+          <div class="upload-zone" id="zone-math" style="--zc:#0B7285;--zb:#E6F7FA;" onclick="insertMath()">
+            <svg width="26" height="26" viewBox="0 0 16 16"><text x="1" y="14" font-size="15" font-weight="600" fill="#0B7285" font-family="serif">&#x2211;</text></svg>
+            <span class="zone-label" style="color:#0B7285;">클릭하여 수식 입력</span>
+            <span class="zone-sub">LaTeX 수식 편집기</span>
+          </div>
+          <div class="media-preview" id="preview-math" style="display:none;" onclick="selectMediaPreview(event,'math')">
+            <div style="background:#E6F7FA;border-radius:6px;padding:16px 20px;text-align:center;">
+              <div id="el-math" style="font-size:22px;font-family:serif;color:#0B7285;letter-spacing:.03em;"></div>
+              <div style="margin-top:6px;font-size:10px;color:#0B7285;opacity:.6;">LaTeX 수식</div>
+            </div>
+            <div class="preview-overlay" style="background:rgba(11,114,133,.5);">클릭하여 편집</div>
+          </div>
+          <!-- 수식 입력 모달 -->
+          <div id="mathInput" style="display:none;margin-top:8px;background:#E6F7FA;border-radius:6px;padding:10px 12px;border:1.5px solid #0B7285;">
+            <div style="font-size:11px;color:#0B7285;margin-bottom:6px;font-weight:500;">LaTeX 수식 입력</div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <input id="mathInputField" type="text" placeholder="예: f(x) = \sum_{i=0}^{n} x_i" style="flex:1;height:28px;border:1px solid #0B7285;border-radius:4px;font-size:12px;padding:0 8px;font-family:monospace;background:#fff;color:var(--text-primary);">
+              <button onclick="confirmMath()" style="height:28px;padding:0 10px;border-radius:4px;border:none;background:#0B7285;color:#fff;font-size:11px;cursor:pointer;font-family:inherit;">확인</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 표 -->
+        <div class="media-area" id="mediaArea-table" style="display:none;">
+          <div class="upload-zone" id="zone-table" style="--zc:#2B6CB0;--zb:#EBF4FF;" onclick="insertTable()">
+            <svg width="26" height="26" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="13" height="13" rx="1.5" stroke="#2B6CB0" stroke-width="1.3"/><line x1="1.5" y1="6" x2="14.5" y2="6" stroke="#2B6CB0" stroke-width="1.1"/><line x1="1.5" y1="10.5" x2="14.5" y2="10.5" stroke="#2B6CB0" stroke-width="1.1"/><line x1="6" y1="6" x2="6" y2="14.5" stroke="#2B6CB0" stroke-width="1.1"/><line x1="10.5" y1="6" x2="10.5" y2="14.5" stroke="#2B6CB0" stroke-width="1.1"/></svg>
+            <span class="zone-label" style="color:#2B6CB0;">클릭하여 표 삽입</span>
+            <span class="zone-sub">행 · 열 수 선택</span>
+          </div>
+          <div class="media-preview" id="preview-table" style="display:none;" onclick="selectMediaPreview(event,'table')">
+            <div style="overflow-x:auto;border-radius:6px;border:1.5px solid #BEE3F8;">
+              <table id="el-table" style="width:100%;border-collapse:collapse;font-size:12px;"></table>
+            </div>
+            <div class="preview-overlay" style="background:rgba(43,108,176,.4);">클릭하여 편집</div>
+          </div>
+          <!-- 표 크기 선택 -->
+          <div id="tableInput" style="display:none;margin-top:8px;background:#EBF4FF;border-radius:6px;padding:10px 12px;border:1.5px solid #2B6CB0;">
+            <div style="font-size:11px;color:#2B6CB0;margin-bottom:8px;font-weight:500;">표 크기 선택</div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <label style="font-size:11px;color:#2B6CB0;">행</label>
+              <input id="tblRows" type="number" value="3" min="1" max="10" style="width:44px;height:26px;border:1px solid #2B6CB0;border-radius:4px;font-size:12px;text-align:center;font-family:inherit;background:#fff;color:var(--text-primary);">
+              <label style="font-size:11px;color:#2B6CB0;">열</label>
+              <input id="tblCols" type="number" value="3" min="1" max="8" style="width:44px;height:26px;border:1px solid #2B6CB0;border-radius:4px;font-size:12px;text-align:center;font-family:inherit;background:#fff;color:var(--text-primary);">
+              <button onclick="confirmTable()" style="height:26px;padding:0 10px;border-radius:4px;border:none;background:#2B6CB0;color:#fff;font-size:11px;cursor:pointer;font-family:inherit;">삽입</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="choices">
+          <div class="choice-item"><div class="choice-num">①</div><div class="choice-txt">선택지를 입력합니다.</div></div>
+          <div class="choice-item"><div class="choice-num">②</div><div class="choice-txt">선택지를 입력합니다.</div></div>
+          <div class="choice-item"><div class="choice-num">③</div><div class="choice-txt">선택지를 입력합니다.</div></div>
+          <div class="choice-item"><div class="choice-num">④</div><div class="choice-txt">선택지를 입력합니다.</div></div>
+          <div class="choice-item"><div class="choice-num">⑤</div><div class="choice-txt">선택지를 입력합니다.</div></div>
+        </div>
+        <div class="q-footer">
+          <div class="hint-row"><div class="hint-tag h">힌트</div><div class="hint-ph">힌트를 입력합니다.</div></div>
+          <div class="hint-row"><div class="hint-tag e">해설</div><div class="hint-ph">해설을 입력합니다.</div></div>
+        </div>
+      </div>
+      <div class="q-card-actions">
+        <div class="ca-btn" title="위로" onclick="event.stopPropagation();toast('위로 이동')">↑</div>
+        <div class="ca-btn" title="아래로" onclick="event.stopPropagation();toast('아래로 이동')">↓</div>
+        <div class="ca-btn" title="복제" onclick="event.stopPropagation();toast('문항 복제')">⊕</div>
+        <div class="ca-btn" title="삭제" onclick="event.stopPropagation();toast('문항 삭제')" style="color:var(--danger)">🗑</div>
+      </div>
+    </div>
+
+    <!-- CARD 1: 단답형 (inactive) -->
+    <div class="q-card inactive" id="card1" onclick="selectCard(1)" style="cursor:pointer;">
+      <div class="q-card-inner">
+        <div class="q-header">
+          <div class="q-num-badge off">2</div>
+          <div class="q-stem"><span class="q-stem-ph">발문을 입력합니다.</span></div>
+          <div class="active-badge">편집 중</div>
+        </div>
+        <div class="short-ans-wrap">
+          <div class="short-ans-box">정답 입력</div>
+        </div>
+        <div class="q-footer">
+          <div class="hint-row"><div class="hint-tag h">힌트</div><div class="hint-ph">힌트를 입력합니다.</div></div>
+          <div class="hint-row"><div class="hint-tag e">해설</div><div class="hint-ph">해설을 입력합니다.</div></div>
+        </div>
+      </div>
+      <div class="q-card-actions">
+        <div class="ca-btn" onclick="event.stopPropagation();toast('위로 이동')">↑</div>
+        <div class="ca-btn" onclick="event.stopPropagation();toast('아래로 이동')">↓</div>
+        <div class="ca-btn" onclick="event.stopPropagation();toast('문항 복제')">⊕</div>
+        <div class="ca-btn" onclick="event.stopPropagation();toast('문항 삭제')" style="color:var(--danger)">🗑</div>
+      </div>
+    </div>
+
+    <!-- CARD 2: OX형 (inactive) -->
+    <div class="q-card inactive" id="card2" onclick="selectCard(2)" style="cursor:pointer;">
+      <div class="q-card-inner">
+        <div class="q-header">
+          <div class="q-num-badge off">3</div>
+          <div class="q-stem"><span class="q-stem-ph">발문을 입력합니다.</span></div>
+          <div class="active-badge">편집 중</div>
+        </div>
+        <div class="choices" style="flex-direction:row;">
+          <div class="choice-item" style="flex:1;justify-content:center;"><div style="font-size:18px;font-weight:600;color:var(--text-tertiary);">O</div></div>
+          <div class="choice-item" style="flex:1;justify-content:center;"><div style="font-size:18px;font-weight:600;color:var(--text-tertiary);">X</div></div>
+        </div>
+        <div class="q-footer">
+          <div class="hint-row"><div class="hint-tag h">힌트</div><div class="hint-ph">힌트를 입력합니다.</div></div>
+        </div>
+      </div>
+      <div class="q-card-actions">
+        <div class="ca-btn" onclick="event.stopPropagation();toast('위로 이동')">↑</div>
+        <div class="ca-btn" onclick="event.stopPropagation();toast('아래로 이동')">↓</div>
+        <div class="ca-btn" onclick="event.stopPropagation();toast('문항 복제')">⊕</div>
+        <div class="ca-btn" onclick="event.stopPropagation();toast('문항 삭제')" style="color:var(--danger)">🗑</div>
+      </div>
+    </div>
+
+    <button class="canvas-add-btn" onclick="toast('새 문항 추가')">＋ 문항 추가</button>
+    <div style="height:32px;"></div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <div class="rp-sec">
+      <div class="rp-hd"><span class="rp-title">발문 응원</span><span class="rp-arrow">›</span></div>
+    </div>
+    <div class="rp-sec">
+      <div class="rp-hd"><span class="rp-title">단답형 문항 정보</span><span class="rp-arrow">∨</span></div>
+      <div class="rp-body">
+        <div class="rp-row"><span class="rp-lbl">배점</span><span class="rp-val">2점</span></div>
+        <div class="rp-row"><span class="rp-lbl">힌트</span><div class="toggle"></div></div>
+        <div class="rp-row"><span class="rp-lbl">해설</span><div class="toggle"></div></div>
+        <div class="rp-row"><span class="rp-lbl">필수 문항</span><div class="toggle off"></div></div>
+      </div>
+    </div>
+    <div class="rp-sec" style="border-bottom:none;">
+      <div class="rp-hd"><span class="rp-title">저작권 안내</span><span class="rp-arrow">›</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- STATUS BAR -->
+<div class="status-bar">
+  <div class="st-item"><div class="st-dot"></div>자동 저장됨</div>
+  <div class="st-item">문항 3개</div>
+  <div class="st-item" id="statusInfo">1번 문항 · 5지선다형</div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toastEl"></div>
+
+<script>
+  let activeCard = 0;
+  let currentVariant = 'a';
+  let activeMediaType = null;
+  let toastTimer;
+
+  const cardMeta = [
+    {type:'5지선다형', label:'1번 문항'},
+    {type:'단답형',   label:'2번 문항'},
+    {type:'OX형',    label:'3번 문항'},
+  ];
+  const variantDesc = {
+    a: '파란 테두리 · 번호 강조 · 배지',
+    b: '왼쪽 강조 바 · 배경 틴트 · 번호 강조'
+  };
+  const labels = {image:'이미지', video:'동영상', audio:'오디오', math:'수식', table:'표'};
+
+  /* ── variant ────────────────────────────── */
+  function switchVariant(v) {
+    currentVariant = v;
+    document.body.className = 'var-' + v;
+    document.getElementById('vbtnA').classList.toggle('on', v === 'a');
+    document.getElementById('vbtnB').classList.toggle('on', v === 'b');
+    document.getElementById('variantDesc').textContent = variantDesc[v];
+  }
+
+  /* ── card select ────────────────────────── */
+  function selectCard(idx) {
+    activeCard = idx;
+    document.querySelectorAll('.q-card').forEach((c, i) => {
+      c.classList.toggle('active', i === idx);
+      c.classList.toggle('inactive', i !== idx);
+    });
+    document.querySelectorAll('.q-num-badge').forEach((b, i) => {
+      b.classList.toggle('on', i === idx);
+      b.classList.toggle('off', i !== idx);
+    });
+    document.querySelectorAll('.q-nav').forEach((n, i) => {
+      n.classList.toggle('active', i === idx);
+      n.querySelectorAll('.q-nav-num').forEach(el => {
+        el.classList.toggle('on', i === idx);
+        el.classList.toggle('off', i !== idx);
+      });
+    });
+    document.getElementById('statusInfo').textContent = cardMeta[idx].label + ' · ' + cardMeta[idx].type;
+  }
+
+  /* ── 툴바 버튼 클릭 ────────────────────── */
+  function activateMediaTool(type) {
+    if (activeCard !== 0) { toast('콘텐츠를 삽입할 문항을 먼저 선택하세요'); return; }
+    if (activeMediaType === type) { deactivateAll(); return; }
+    deactivateAll(true);
+    activeMediaType = type;
+    document.getElementById('btn-' + type).classList.add('tb-active');
+    document.getElementById('mediaArea-' + type).style.display = 'block';
+    // 수식/표는 즉시 입력 UI 표시, 나머지는 파일 선택
+    if (type === 'math') {
+      insertMath();
+    } else if (type === 'table') {
+      insertTable();
+    } else {
+      pickFile(type);
+    }
+  }
+
+  /* ── 파일 선택 다이얼로그 호출 ─────────── */
+  function pickFile(type) {
+    document.getElementById('fi-' + type).click();
+  }
+
+  /* ── 파일 선택 완료 핸들러 ─────────────── */
+  function handleFile(e, type) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    function showPreview(src) {
+      const zone    = document.getElementById('zone-' + type);
+      const preview = document.getElementById('preview-' + type);
+      const el      = document.getElementById('el-' + type);
+      el.src = src;
+      if (type === 'audio') {
+        document.getElementById('audio-filename').textContent = file.name;
+      }
+      zone.style.display    = 'none';
+      preview.style.display = 'block';
+      preview.classList.add('selected-ring');
+      document.getElementById('ctx-' + type).classList.add('visible');
+      activeMediaType = type;
+      document.getElementById('btn-' + type).classList.add('tb-active');
+      toast(labels[type] + ' 삽입 완료 — 툴바 활성화');
+    }
+
+    if (type === 'image') {
+      const reader = new FileReader();
+      reader.onload = function(ev) { showPreview(ev.target.result); };
+      reader.readAsDataURL(file);
+    } else {
+      showPreview(URL.createObjectURL(file));
+    }
+    e.target.value = '';
+  }
+
+  /* ── 수식 입력 ──────────────────────────── */
+  function insertMath() {
+    document.getElementById('mathInput').style.display = 'block';
+    document.getElementById('mathInputField').focus();
+  }
+  function confirmMath() {
+    const val = document.getElementById('mathInputField').value.trim();
+    if (!val) { toast('수식을 입력하세요'); return; }
+    document.getElementById('el-math').textContent = val;
+    document.getElementById('mathInput').style.display = 'none';
+    document.getElementById('zone-math').style.display = 'none';
+    const preview = document.getElementById('preview-math');
+    preview.style.display = 'block';
+    preview.classList.add('selected-ring');
+    document.getElementById('ctx-math').classList.add('visible');
+    activeMediaType = 'math';
+    toast('수식 삽입 완료 — 툴바 활성화');
+  }
+
+  /* ── 표 삽입 ─────────────────────────────── */
+  function insertTable() {
+    document.getElementById('tableInput').style.display = 'block';
+  }
+  function confirmTable() {
+    const rows = parseInt(document.getElementById('tblRows').value) || 3;
+    const cols = parseInt(document.getElementById('tblCols').value) || 3;
+    const tbl = document.getElementById('el-table');
+    tbl.innerHTML = '';
+    for (let r = 0; r < rows; r++) {
+      const tr = tbl.insertRow();
+      for (let c = 0; c < cols; c++) {
+        const cell = r === 0 ? document.createElement('th') : tr.insertCell();
+        if (r === 0) {
+          cell.textContent = '열 ' + (c + 1);
+          cell.style.cssText = 'background:#2B6CB0;color:#fff;padding:6px 10px;border:1px solid #BEE3F8;font-size:12px;font-weight:500;';
+          tr.appendChild(cell);
+        } else {
+          cell.textContent = '';
+          cell.style.cssText = 'padding:6px 10px;border:1px solid #BEE3F8;font-size:12px;color:var(--text-tertiary);';
+          cell.contentEditable = true;
+        }
+      }
+    }
+    document.getElementById('tableInput').style.display = 'none';
+    document.getElementById('zone-table').style.display = 'none';
+    const preview = document.getElementById('preview-table');
+    preview.style.display = 'block';
+    preview.classList.add('selected-ring');
+    document.getElementById('ctx-table').classList.add('visible');
+    activeMediaType = 'table';
+    toast('표 삽입 완료 — 툴바 활성화');
+  }
+
+  /* ── 미리보기 클릭 → 컨텍스트 툴바 재활성 */
+  function selectMediaPreview(e, type) {
+    e.stopPropagation();
+    document.querySelectorAll('.toolbar-ctx').forEach(c => c.classList.remove('visible'));
+    document.getElementById('ctx-' + type).classList.add('visible');
+    document.querySelectorAll('.media-preview').forEach(p => p.classList.remove('selected-ring'));
+    document.getElementById('preview-' + type).classList.add('selected-ring');
+    activeMediaType = type;
+    document.querySelectorAll('[id^="btn-"]').forEach(b => b.classList.remove('tb-active'));
+    document.getElementById('btn-' + type).classList.add('tb-active');
+  }
+
+  /* ── 미디어 삭제 ────────────────────────── */
+  function removeMedia(type) {
+    const zone = document.getElementById('zone-' + type);
+    const preview = document.getElementById('preview-' + type);
+    if (zone) zone.style.display = 'flex';
+    if (preview) { preview.style.display = 'none'; preview.classList.remove('selected-ring'); }
+    // 소스 초기화
+    const el = document.getElementById('el-' + type);
+    if (el && (type === 'image')) el.src = '';
+    if (el && (type === 'video' || type === 'audio')) { el.pause && el.pause(); el.src = ''; }
+    if (type === 'math') {
+      document.getElementById('el-math').textContent = '';
+      document.getElementById('mathInputField').value = '';
+    }
+    // 영역 숨기기
+    document.getElementById('mediaArea-' + type).style.display = 'none';
+    deactivateAll();
+    toast(labels[type] + ' 삭제됨');
+  }
+
+  /* ── 전체 비활성화 ──────────────────────── */
+  function deactivateAll(keepArea) {
+    activeMediaType = null;
+    document.querySelectorAll('[id^="btn-"]').forEach(b => b.classList.remove('tb-active'));
+    document.querySelectorAll('.toolbar-ctx').forEach(c => c.classList.remove('visible'));
+    document.querySelectorAll('.media-preview').forEach(p => p.classList.remove('selected-ring'));
+    if (!keepArea) {
+      document.querySelectorAll('.media-area').forEach(a => { a.style.display = 'none'; });
+    }
+  }
+
+  /* ── canvas 클릭 → 선택 해제 ───────────── */
+  function handleCanvasClick(e) {
+    if (!e.target.closest('.media-preview') && !e.target.closest('.toolbar-ctx') && !e.target.closest('.upload-zone') && !e.target.closest('#mathInput') && !e.target.closest('#tableInput')) {
+      document.querySelectorAll('.media-preview').forEach(p => p.classList.remove('selected-ring'));
+      document.querySelectorAll('.toolbar-ctx').forEach(c => c.classList.remove('visible'));
+    }
+  }
+
+  /* ── toast ──────────────────────────────── */
+  function toast(msg) {
+    const el = document.getElementById('toastEl');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+  }
+</script>
+</body>
+</html>
