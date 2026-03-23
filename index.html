@@ -304,6 +304,20 @@ body.var-a .q-card.active .active-badge{display:block;}
 .media-preview:hover .preview-overlay { opacity:1; }
 .selected-ring { outline:2px solid var(--accent); outline-offset:2px; }
 
+/* ── ARTICLE INDICATOR ───────────────────────── */
+.article-indicator {
+  display:inline-flex; align-items:center; gap:2px;
+  padding:4px 10px;
+  border-radius:6px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  margin-bottom:12px;
+  font-size:12px;
+}
+#artCurrent { color:var(--accent); font-size:13px; font-weight:600; }
+.art-sep    { color:var(--text-tertiary); font-size:11px; margin:0 2px; }
+#artTotal   { color:var(--text-tertiary); font-weight:400; }
+
 /* ── CANVAS ADD BTN ──────────────────────────── */
 .canvas-add-btn{
   display:flex;align-items:center;justify-content:center;gap:6px;
@@ -339,6 +353,7 @@ body.var-a .q-card.active .active-badge{display:block;}
     <button class="btn" onclick="toast('미리보기 열림')">👁 미리보기</button>
     <button class="btn btn-primary" onclick="toast('저장 완료!')">저장하기</button>
     <button class="btn" onclick="toast('닫기')">닫기</button>
+
   </div>
 </div>
 
@@ -463,41 +478,16 @@ body.var-a .q-card.active .active-badge{display:block;}
 <!-- ── MAIN ──────────────────────────────────── -->
 <div class="main">
 
-  <!-- SIDEBAR -->
-  <div class="sidebar">
-    <div class="sidebar-hd">
-      <span class="sidebar-title">문항 목록</span>
-      <span style="font-size:10px;color:var(--text-tertiary);">3문항</span>
-    </div>
-    <div class="sidebar-body" id="sidebarBody">
-      <div class="q-nav active" onclick="selectCard(0)">
-        <div class="q-nav-num on">1</div>
-        <div class="q-nav-txt">발문을 입력합니다.</div>
-        <div class="q-nav-type">5지선</div>
-      </div>
-      <div class="q-nav" onclick="selectCard(1)">
-        <div class="q-nav-num off">2</div>
-        <div class="q-nav-txt">발문을 입력합니다.</div>
-        <div class="q-nav-type">단답형</div>
-      </div>
-      <div class="q-nav" onclick="selectCard(2)">
-        <div class="q-nav-num off">3</div>
-        <div class="q-nav-txt">발문을 입력합니다.</div>
-        <div class="q-nav-type">OX형</div>
-      </div>
-    </div>
-    <div class="sidebar-foot" style="display:none;"></div>
-  </div>
+
 
   <!-- CANVAS -->
   <div class="canvas" id="canvas" onclick="handleCanvasClick(event)">
 
-    <!-- Variant switcher -->
-    <div class="variant-strip">
-      <span class="variant-strip-label">활성 문항 표시 방식</span>
-      <button class="vbtn on" id="vbtnA" onclick="switchVariant('a')">안 ①  테두리 + 편집 중</button>
-      <button class="vbtn" id="vbtnB" onclick="switchVariant('b')">안 ②  왼쪽 강조 바</button>
-      <span class="variant-desc" id="variantDesc">파란 테두리 · 번호 강조 · 배지</span>
+    <!-- 아티클 인디케이터 -->
+    <div class="article-indicator">
+      <span id="artCurrent">1</span>
+      <span class="art-sep">/</span>
+      <span id="artTotal">3</span>
     </div>
 
     <!-- CARD 0: 5지선다 (starts active) -->
@@ -728,6 +718,14 @@ body.var-a .q-card.active .active-badge{display:block;}
   };
   const labels = {image:'이미지', video:'동영상', audio:'오디오', math:'수식', table:'표'};
 
+  /* ── 아티클 인디케이터 ──────────────────── */
+  const ART_TOTAL = 3;
+  let artCurrent = 1;
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('artTotal').textContent = ART_TOTAL;
+    document.getElementById('artCurrent').textContent = artCurrent;
+  });
+
   /* ── variant ────────────────────────────── */
   function switchVariant(v) {
     currentVariant = v;
@@ -756,6 +754,10 @@ body.var-a .q-card.active .active-badge{display:block;}
       });
     });
     document.getElementById('statusInfo').textContent = cardMeta[idx].label + ' · ' + cardMeta[idx].type;
+
+    // 인디케이터 동기화
+    artCurrent = idx + 1;
+    document.getElementById('artCurrent').textContent = artCurrent;
   }
 
   /* ── 툴바 버튼 클릭 ────────────────────── */
