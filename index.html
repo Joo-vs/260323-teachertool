@@ -133,10 +133,10 @@ body {
 .add-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light);}
 
 /* ── CANVAS ──────────────────────────────────── */
-.canvas{flex:1;overflow-y:auto;padding:20px 24px;background:var(--bg);display:flex;flex-direction:column;align-items:center;}
+.canvas{flex:1;overflow-y:auto;padding:20px 24px;background:var(--bg);}
 .canvas::-webkit-scrollbar{width:4px;}
 .canvas::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
-.canvas-inner{width:100%;max-width:640px;}
+.canvas-inner{width:100%;max-width:640px;margin:0 auto;}
 
 /* variant toggle strip */
 .variant-strip{
@@ -305,7 +305,13 @@ body.var-a .q-card.active .active-badge{display:block;}
 .media-preview:hover .preview-overlay { opacity:1; }
 .selected-ring { outline:2px solid var(--accent); outline-offset:2px; }
 
-/* ── ARTICLE INDICATOR ───────────────────────── */
+/* ── INDICATOR BAR ───────────────────────────── */
+.indicator-bar {
+  flex-shrink:0;
+  background:var(--bg);
+  padding:8px 16px 0;
+  z-index:10;
+}
 .article-indicator {
   display:inline-flex; align-items:center; gap:2px;
   padding:4px 10px;
@@ -313,10 +319,6 @@ body.var-a .q-card.active .active-badge{display:block;}
   background:var(--surface);
   border:1px solid var(--border);
   font-size:12px;
-  position:fixed;
-  top:98px;
-  left:16px;
-  z-index:80;
   box-shadow:0 1px 4px rgba(0,0,0,.06);
 }
 #artCurrent { color:var(--accent); font-size:13px; font-weight:600; }
@@ -480,11 +482,13 @@ body.var-a .q-card.active .active-badge{display:block;}
 
 </div>
 
-<!-- 아티클 인디케이터 (fixed) -->
-<div class="article-indicator">
-  <span id="artCurrent">1</span>
-  <span class="art-sep">/</span>
-  <span id="artTotal">3</span>
+<!-- ── INDICATOR BAR ────────────────────────── -->
+<div class="indicator-bar">
+  <div class="article-indicator">
+    <span id="artCurrent">1</span>
+    <span class="art-sep">/</span>
+    <span id="artTotal">3</span>
+  </div>
 </div>
 
 <!-- ── MAIN ──────────────────────────────────── -->
@@ -728,21 +732,11 @@ body.var-a .q-card.active .active-badge{display:block;}
   /* ── 아티클 인디케이터 ──────────────────── */
   const ART_TOTAL = 3;
   let artCurrent = 1;
-  function positionIndicator() {
-    const toolbarBottom = document.querySelector('.toolbar-area').getBoundingClientRect().bottom;
-    document.querySelector('.article-indicator').style.top = (toolbarBottom + 10) + 'px';
-  }
+
   document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('artTotal').textContent = ART_TOTAL;
     document.getElementById('artCurrent').textContent = artCurrent;
-    positionIndicator();
   });
-  // 컨텍스트 툴바 열릴 때 위치 재계산
-  const _origVisible = CSSStyleDeclaration.prototype;
-  new MutationObserver(positionIndicator).observe(
-    document.querySelector('.toolbar-area') || document.body,
-    { attributes: true, subtree: true, attributeFilter: ['class'] }
-  );
 
   /* ── variant ────────────────────────────── */
   function switchVariant(v) {
@@ -818,7 +812,7 @@ body.var-a .q-card.active .active-badge{display:block;}
       preview.style.display = 'block';
       preview.classList.add('selected-ring');
       document.getElementById('ctx-' + type).classList.add('visible');
-      activeMediaType = type;
+        activeMediaType = type;
       document.getElementById('btn-' + type).classList.add('tb-active');
       toast(labels[type] + ' 삽입 완료 — 툴바 활성화');
     }
