@@ -24,7 +24,7 @@
   --success:#22C55E;
   --danger:#EF4444;
   --sidebar-w:200px;
-  --right-w:196px;
+  --right-w:220px;
 }
 
 body {
@@ -133,9 +133,10 @@ body {
 .add-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light);}
 
 /* ── CANVAS ──────────────────────────────────── */
-.canvas{flex:1;overflow-y:auto;padding:24px 36px;background:var(--bg);}
+.canvas{flex:1;overflow-y:auto;padding:20px 24px;background:var(--bg);display:flex;flex-direction:column;align-items:center;}
 .canvas::-webkit-scrollbar{width:4px;}
 .canvas::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.canvas-inner{width:100%;max-width:640px;}
 
 /* variant toggle strip */
 .variant-strip{
@@ -249,7 +250,7 @@ body.var-a .q-card.active .active-badge{display:block;}
 .img-selected-ring{outline:2px solid var(--accent);outline-offset:2px;}
 
 /* card side actions */
-.q-card-actions{position:absolute;right:-40px;top:10px;display:flex;flex-direction:column;gap:3px;opacity:0;transition:opacity .15s;pointer-events:none;}
+.q-card-actions{position:absolute;right:-38px;top:10px;display:flex;flex-direction:column;gap:3px;opacity:0;transition:opacity .15s;pointer-events:none;}
 .q-card.active .q-card-actions{opacity:1;pointer-events:all;}
 .ca-btn{width:30px;height:30px;border-radius:6px;border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:var(--text-secondary);transition:all .12s;}
 .ca-btn:hover{background:var(--surface2);}
@@ -311,8 +312,12 @@ body.var-a .q-card.active .active-badge{display:block;}
   border-radius:6px;
   background:var(--surface);
   border:1px solid var(--border);
-  margin-bottom:12px;
   font-size:12px;
+  position:fixed;
+  top:98px;
+  left:16px;
+  z-index:80;
+  box-shadow:0 1px 4px rgba(0,0,0,.06);
 }
 #artCurrent { color:var(--accent); font-size:13px; font-weight:600; }
 .art-sep    { color:var(--text-tertiary); font-size:11px; margin:0 2px; }
@@ -475,6 +480,13 @@ body.var-a .q-card.active .active-badge{display:block;}
 
 </div>
 
+<!-- 아티클 인디케이터 (fixed) -->
+<div class="article-indicator">
+  <span id="artCurrent">1</span>
+  <span class="art-sep">/</span>
+  <span id="artTotal">3</span>
+</div>
+
 <!-- ── MAIN ──────────────────────────────────── -->
 <div class="main">
 
@@ -482,13 +494,7 @@ body.var-a .q-card.active .active-badge{display:block;}
 
   <!-- CANVAS -->
   <div class="canvas" id="canvas" onclick="handleCanvasClick(event)">
-
-    <!-- 아티클 인디케이터 -->
-    <div class="article-indicator">
-      <span id="artCurrent">1</span>
-      <span class="art-sep">/</span>
-      <span id="artTotal">3</span>
-    </div>
+  <div class="canvas-inner">
 
     <!-- CARD 0: 5지선다 (starts active) -->
     <div class="q-card active" id="card0" onclick="selectCard(0)">
@@ -669,7 +675,8 @@ body.var-a .q-card.active .active-badge{display:block;}
 
     <button class="canvas-add-btn" onclick="toast('새 문항 추가')">＋ 문항 추가</button>
     <div style="height:32px;"></div>
-  </div>
+  </div><!-- /canvas-inner -->
+  </div><!-- /canvas -->
 
   <!-- RIGHT PANEL -->
   <div class="right-panel">
@@ -721,10 +728,21 @@ body.var-a .q-card.active .active-badge{display:block;}
   /* ── 아티클 인디케이터 ──────────────────── */
   const ART_TOTAL = 3;
   let artCurrent = 1;
+  function positionIndicator() {
+    const toolbarBottom = document.querySelector('.toolbar-area').getBoundingClientRect().bottom;
+    document.querySelector('.article-indicator').style.top = (toolbarBottom + 10) + 'px';
+  }
   document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('artTotal').textContent = ART_TOTAL;
     document.getElementById('artCurrent').textContent = artCurrent;
+    positionIndicator();
   });
+  // 컨텍스트 툴바 열릴 때 위치 재계산
+  const _origVisible = CSSStyleDeclaration.prototype;
+  new MutationObserver(positionIndicator).observe(
+    document.querySelector('.toolbar-area') || document.body,
+    { attributes: true, subtree: true, attributeFilter: ['class'] }
+  );
 
   /* ── variant ────────────────────────────── */
   function switchVariant(v) {
